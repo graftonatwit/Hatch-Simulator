@@ -164,6 +164,90 @@ function draw() {
 document.addEventListener("keydown", e => {
   if (e.code === "Space") hatchPet();
 });
+function hatchPet() {
+  if (player.coins < 10) return;
+  player.coins -= 10;
+
+  const types = ["frog", "magnet", "dragon"];
+  let type = types[Math.floor(Math.random() * types.length)];
+
+  // Rarity system
+  const rand = Math.random();
+  let rarity = "common";
+  if (rand < 0.05) rarity = "legendary";
+  else if (rand < 0.15) rarity = "epic";
+  else if (rand < 0.4) rarity = "rare";
+
+  // Orbit and speed
+  pets.push({
+    type: type,
+    angle: Math.random() * Math.PI * 2,
+    radius: 30 + Math.random() * 20,
+    speed: 0.02 + Math.random() * 0.02,
+    rarity: rarity
+  });
+}
+
+// In updatePets(), modify effects based on rarity
+function updatePets() {
+  pets.forEach(pet => {
+    // orbit animation
+    pet.angle += pet.speed;
+    pet.x = player.x + Math.cos(pet.angle) * pet.radius;
+    pet.y = player.y + Math.sin(pet.angle) * pet.radius;
+
+    let effectMultiplier = 1;
+    if (pet.rarity === "rare") effectMultiplier = 1.5;
+    else if (pet.rarity === "epic") effectMultiplier = 2;
+    else if (pet.rarity === "legendary") effectMultiplier = 3;
+
+    if (pet.type === "frog") {
+      if (Math.random() < 0.005 * effectMultiplier) {
+        player.y -= 50 * effectMultiplier; // bigger jumps for rarer pets
+      }
+    }
+
+    if (pet.type === "magnet") {
+      coins.forEach(c => {
+        let dx = player.x - c.x;
+        let dy = player.y - c.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100) {
+          c.x += dx * 0.05 * effectMultiplier;
+          c.y += dy * 0.05 * effectMultiplier;
+        }
+      });
+    }
+
+    if (pet.type === "dragon") {
+      coins = coins.filter(c => {
+        let dx = player.x - c.x;
+        let dy = player.y - c.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 50) {
+          player.coins += effectMultiplier;
+          return false;
+        }
+        return true;
+      });
+    }
+  });
+}
+
+// Draw pets with rarity visual cues
+pets.forEach(pet => {
+  if (pet.type === "frog") ctx.fillStyle = "green";
+  else if (pet.type === "magnet") ctx.fillStyle = "orange";
+  else if (pet.type === "dragon") ctx.fillStyle = "red";
+
+  let size = 10; 
+  if (pet.rarity === "rare") size = 14;
+  else if (pet.rarity === "epic") size = 18;
+  else if (pet.rarity === "legendary") size = 22;
+
+  ctx.beginPath();
+  ctx.arc(pet.x, pet.y, size, 0, Math.PI * 2);
+  ctx.fill();
+});
 
 // LOOP
 function gameLoop() {
